@@ -29,6 +29,7 @@ class TriviaTestCase(unittest.TestCase):
 
         self.new_question = { "question": "Heres a new question string", "answer": "Heres a new answer string", "difficulty": 1, "category": 3 }
         self.searchTerm = { "searchTerm": "Who" }
+        self.quiz_body = { "previous_questions": [1, 4], "quiz_category": "Entertainment"}
        
        # binds the app to the current context
         with self.app.app_context():
@@ -90,12 +91,20 @@ class TriviaTestCase(unittest.TestCase):
     def test_category_specific_questions(self):
         res = self.client().get("/categories/2/questions")
         data = json.loads(res.data)
-        print(res)
+        
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True) 
         self.assertTrue(data["questions"])
         self.assertTrue(data["totalQuestions"])
         self.assertTrue(data["currentCategory"])
+
+    def test_get_quizzes(self):
+        res = self.client().post("/quizzes", json=self.quiz_body)
+        data = json.loads(res.data)
+    
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True) 
+        self.assertTrue(data["question"])
 
 
 # Make the tests conveniently executable

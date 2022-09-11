@@ -2,6 +2,7 @@
 from logging import captureWarnings
 import os
 import json
+from unicodedata import category
 from dotenv import load_dotenv
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -175,7 +176,6 @@ def create_app(test_config=None):
             try:
                 question = Question(question=new_question, answer=answer, difficulty=difficulty, category=category)
                 question.insert()
-                print(question)
 
                 return jsonify({
                     "success" : True
@@ -237,7 +237,31 @@ def create_app(test_config=None):
 
     @app.route('/quizzes', methods=['POST'])
     def get_puzzles():
-        pass
+        body = request.get_json()
+    
+        try:
+            previous_questions = body.get('previous_questions')
+            quiz_category = body.get('quiz_category')
+            current_category = Category.query.filter(Category.type==quiz_category).one_or_none()
+            cat_questions = Question.query.filter(Question.category==current_category.id)
+            random_range = [ question.id for question in cat_questions ]
+            upper_limit = len(Question.query.all())
+            
+            #generate random number within the range of zero to the number of question
+            question_id = choice([i for i in random_range if i not in previous_questions])
+            current_category = Category.query.filter(Category.type==quiz_category).one_or_none()
+            question = Question.query.filter(Question.id == question_id).one()
+
+            if question is None:
+                abort(404)
+
+        except:
+            abort(400)
+
+        return jsonify({
+            "success" : True,
+            "question" : question.format()
+        })
 
     """
     @TODO:
