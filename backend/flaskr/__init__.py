@@ -117,7 +117,6 @@ def create_app(test_config=None):
     """
     @app.route("/questions/<int:question_id>", methods=["DELETE"])
     def delete_question(question_id):
-
         
         try:
             question = Question.query.filter(Question.id == question_id).one_or_none()
@@ -150,16 +149,12 @@ def create_app(test_config=None):
 
         #Handling seach term
         if (body.get("searchTerm")):
-            try:
-                searchTerm = body.get("searchTerm")
-                questions = Question.query.filter(Question.question.ilike(f'%{searchTerm}%'))
-                paginated_questions = paginate_questions(request, questions)
-
-                if questions is None:
-                    abort(404) 
-
-            except:
-                abort(400)
+            searchTerm = body.get("searchTerm")
+            questions = Question.query.filter(Question.question.ilike(f'%{searchTerm}%')).all()
+            paginated_questions = paginate_questions(request, questions)
+            
+            if len(paginated_questions) == 0:
+                abort(404)
 
             return jsonify({
                 "success": True,
@@ -246,7 +241,7 @@ def create_app(test_config=None):
             cat_questions = Question.query.filter(Question.category==current_category.id)
             random_range = [ question.id for question in cat_questions ]
             upper_limit = len(Question.query.all())
-            
+
             #generate random number within the range of zero to the number of question
             question_id = choice([i for i in random_range if i not in previous_questions])
             current_category = Category.query.filter(Category.type==quiz_category).one_or_none()
@@ -268,6 +263,19 @@ def create_app(test_config=None):
     Create error handlers for all expected errors
     including 404 and 422.
     """
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({ "success": False, "error": 400, "message": "Bad request"}), 400,
+
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({ "success": False, "error": 404, "message": "Not found"}), 404,
+
+    @app.errorhandler(422)
+    def unprocessable(error):
+        return jsonify({ "success": False, "error": 422, "message": "Unprocessable request"}), 422,
+
 
     return app
 
