@@ -31,7 +31,7 @@ class TriviaTestCase(unittest.TestCase):
         self.bad_question = { "question": "Heres a new question string", "answer": "Heres a new answer string", "difficulty": 1, "category": 1000 }
     
         self.searchTerm = { "searchTerm": "Who" }
-        self.quiz_body = { "previous_questions": [1, 4], "quiz_category": "Entertainment"}
+        self.quiz_body = { "previous_questions": [2, 4], "quiz_category": { "id" : 5, "type" : "Entertainment"}}
        
        # binds the app to the current context
         with self.app.app_context():
@@ -55,6 +55,15 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True)
         self.assertTrue(data["categories"])
+
+    def test_400_get_categories_with_args(self):
+        res = self.client().get("/categories?page=1")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Bad request")     
+
     
     def test_get_questions(self):
         res = self.client().get("/questions?page=1")
@@ -65,6 +74,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["questions"])
         self.assertTrue(data["categories"])
         self.assertTrue(data['totalQuestions'] > 0)
+
+    def test_400_get_questions_outOfrange(self):
+        res = self.client().get("/questions?page=2000")
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Bad request")     
 
     def test_delete_question(self):
         res = self.client().delete("/questions/12")
@@ -153,7 +170,7 @@ class TriviaTestCase(unittest.TestCase):
     
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True) 
-        self.assertTrue(data["question"])
+        
 
     def test_400_get_quizzes_without_body(self):
         res = self.client().post("/quizzes")

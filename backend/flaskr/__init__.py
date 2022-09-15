@@ -58,11 +58,14 @@ def create_app(test_config=None):
     @app.route("/categories", methods=['GET'])
     def get_categories():
 
+        if request.args:
+            abort(400)
+
         try:
             categories = get_all_categories()
 
             if categories is None:
-                    abort(404)
+                    abort(500)
         
             return jsonify({
                 "success": True,
@@ -90,25 +93,24 @@ def create_app(test_config=None):
     @app.route("/questions", methods=["GET"])
     def get_questions():
 
-        try:
-            questions = Question.query.order_by(Question.id).all()
-            paginated_questions = paginate_questions(request, questions)
-            categories = get_all_categories()
-            
-            
-            if len(paginated_questions) == 0 or categories is None:
-                abort(404)
-
-            return jsonify({
-                "success" : True,
-                "questions" : paginated_questions,
-                "totalQuestions" : len(questions),
-                "categories" : categories
-            })
-
-        except:
-            abort(500)
+        questions = Question.query.order_by(Question.id).all()
+        paginated_questions = paginate_questions(request, questions)
+        categories = get_all_categories()
         
+        
+        if len(paginated_questions) == 0:
+            abort(400)
+
+        elif paginated_questions is None:
+            abort(500)
+
+        return jsonify({
+            "success" : True,
+            "questions" : paginated_questions,
+            "totalQuestions" : len(questions),
+            "categories" : categories
+        })
+
 
 
     """
@@ -248,23 +250,30 @@ def create_app(test_config=None):
 
             if quiz_category["id"] != 0:
 
-                if quiz_category["id"] in previous_questions:
-                    print('exit')
-                    abort(404)
-
                 current_category = Category.query.filter(Category.type==quiz_category["type"]).one_or_none()
                 cat_questions = Question.query.filter(Question.category==current_category.id)
 
                 #generate random number within the range of zero to the number of question
                 random_range = [ question.id for question in cat_questions ]
-                current_category = Category.query.filter(Category.type==quiz_category["type"]).one_or_none()
-                question_id = choice([i for i in random_range if i not in previous_questions]) or 0
                 
+                #if the questions are finished
+                if  len(previous_questions) == len(random_range):
+                    return jsonify({
+                        "success": True
+                    })
+
+                question_id = choice([i for i in random_range if i not in previous_questions]) or 0
+                                
 
             else:
                 cat_questions = Question.query.all()
                 upper_limit = len(cat_questions)
 
+                #if the questions are finished
+                if  len(previous_questions) == upper_limit:
+                    return jsonify({
+                        "success": True
+                    })
                 #generate random number within the range of zero to the number of question
                 question_id = choice([i for i in range(0, upper_limit) if i not in previous_questions]) or 0
                 
