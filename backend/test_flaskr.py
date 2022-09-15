@@ -28,6 +28,8 @@ class TriviaTestCase(unittest.TestCase):
         setup_db(self.app, self.database_path)
 
         self.new_question = { "question": "Heres a new question string", "answer": "Heres a new answer string", "difficulty": 1, "category": 3 }
+        self.bad_question = { "question": "Heres a new question string", "answer": "Heres a new answer string", "difficulty": 1, "category": 1000 }
+    
         self.searchTerm = { "searchTerm": "Who" }
         self.quiz_body = { "previous_questions": [1, 4], "quiz_category": "Entertainment"}
        
@@ -64,24 +66,31 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["categories"])
         self.assertTrue(data['totalQuestions'] > 0)
 
-    '''def test_delete_question(self):
-        res = self.client().delete("/questions/5")
+    def test_delete_question(self):
+        res = self.client().delete("/questions/12")
         data = json.loads(res.data)
 
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(data["success"], True)
-        self.assertTrue(data["deleted_question"]) '''
-    
+        if data["message"]:
+            self.assertEqual(res.status_code, 422)
+        
+        else:
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(data["success"], True)
+            self.assertTrue(data["deleted_question"])
+
+        
     def test_404_delete_question_wrong_id(self):
         res = self.client().delete("/questions/h")
         data = json.loads(res.data)
+
+  
 
         self.assertEqual(res.status_code, 404)
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "Not found")
 
     def test_422_delete_deleted_question(self):
-        res = self.client().delete("/questions/5")
+        res = self.client().delete("/questions/2000")
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 422)
@@ -104,13 +113,21 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["questions"])
         self.assertTrue(data["totalQuestions"])
 
-    def test_404_search_term(self):
+    def test_404_search_term_notfound(self):
         res = self.client().post("/questions", json={ "searchTerm" : "890"})
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 404)
         self.assertEqual(data["success"], False)
         self.assertEqual(data["message"], "Not found")
+
+    def test_422_add_term_error(self):
+        res = self.client().post("/questions", json=self.bad_question)
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data["success"], False)
+        self.assertTrue(data["message"], "Bad request")
 
     def test_category_specific_questions(self):
         res = self.client().get("/categories/2/questions")
@@ -122,6 +139,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["totalQuestions"])
         self.assertTrue(data["currentCategory"])
 
+    def test_400_category_specific_questions_nonexisting(self):
+        res = self.client().get("/categories/20/questions")
+        data = json.loads(res.data)
+        
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(data["success"], False)
+        self.assertEqual(data["message"], "Bad request")
+
     def test_get_quizzes(self):
         res = self.client().post("/quizzes", json=self.quiz_body)
         data = json.loads(res.data)
@@ -129,6 +154,14 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True) 
         self.assertTrue(data["question"])
+
+    def test_400_get_quizzes_without_body(self):
+        res = self.client().post("/quizzes")
+        data = json.loads(res.data)
+    
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(data["success"], False) 
+        self.assertEqual(data["message"], "Bad request")
 
 
 # Make the tests conveniently executable

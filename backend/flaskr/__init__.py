@@ -1,4 +1,5 @@
 
+from cmath import pi
 from logging import captureWarnings
 import os
 import json
@@ -63,13 +64,14 @@ def create_app(test_config=None):
             if categories is None:
                     abort(404)
         
-        except:
-            abort(400)
+            return jsonify({
+                "success": True,
+                "categories": categories
+            }) 
 
-        return jsonify({
-            "success": True,
-            "categories": categories
-        })
+        except:
+            abort(500)
+
 
 
 
@@ -97,16 +99,17 @@ def create_app(test_config=None):
             if len(paginated_questions) == 0 or categories is None:
                 abort(404)
 
+            return jsonify({
+                "success" : True,
+                "questions" : paginated_questions,
+                "totalQuestions" : len(questions),
+                "categories" : categories
+            })
 
         except:
             abort(400)
         
-        return jsonify({
-            "success" : True,
-            "questions" : paginated_questions,
-            "totalQuestions" : len(questions),
-            "categories" : categories
-        })
+
 
     """
     @TODO:
@@ -120,6 +123,7 @@ def create_app(test_config=None):
         
         try:
             question = Question.query.filter(Question.id == question_id).one_or_none()
+
             if question is None:
                 abort(404)
 
@@ -144,7 +148,7 @@ def create_app(test_config=None):
     of the questions list in the "List" tab.
     """
     @app.route("/questions", methods=["POST"])
-    def add_new():
+    def add_new_or_search():
         body = request.get_json()
 
         #Handling seach term
@@ -208,16 +212,20 @@ def create_app(test_config=None):
             currentCategory = Category.query.filter(Category.id==id).one_or_none()
 
             if questions is None:
-                abort(404)      
+                print('not found')
+                abort(404)  
+
+            return jsonify({
+                "success" : True,
+                "questions" : paginated_questions,
+                "totalQuestions": len(paginated_questions),
+                "currentCategory": currentCategory.type
+                })
+
         except:
             abort(400)
 
-        return jsonify({
-            "success" : True,
-            "questions" : paginated_questions,
-            "totalQuestions": len(paginated_questions),
-            "currentCategory": currentCategory.type
-            })
+
     """
     @TODO:
     Create a POST endpoint to get questions to play the quiz.
@@ -235,28 +243,46 @@ def create_app(test_config=None):
         body = request.get_json()
     
         try:
-            previous_questions = body.get('previous_questions')
-            quiz_category = body.get('quiz_category')
-            current_category = Category.query.filter(Category.type==quiz_category).one_or_none()
-            cat_questions = Question.query.filter(Question.category==current_category.id)
-            random_range = [ question.id for question in cat_questions ]
-            upper_limit = len(Question.query.all())
+            previous_questions = body.get('previous_questions') or []
+            quiz_category = body.get('quiz_category') or None
 
-            #generate random number within the range of zero to the number of question
-            question_id = choice([i for i in random_range if i not in previous_questions])
-            current_category = Category.query.filter(Category.type==quiz_category).one_or_none()
+            if quiz_category["id"] != 0:
+
+                if quiz_category["id"] in previous_questions:
+                    print('exit')
+                    abort(404)
+
+                current_category = Category.query.filter(Category.type==quiz_category["type"]).one_or_none()
+                cat_questions = Question.query.filter(Question.category==current_category.id)
+
+                #generate random number within the range of zero to the number of question
+                random_range = [ question.id for question in cat_questions ]
+                current_category = Category.query.filter(Category.type==quiz_category["type"]).one_or_none()
+                question_id = choice([i for i in random_range if i not in previous_questions]) or 0
+                
+
+            else:
+                cat_questions = Question.query.all()
+                upper_limit = len(cat_questions)
+
+                #generate random number within the range of zero to the number of question
+                question_id = choice([i for i in range(0, upper_limit) if i not in previous_questions]) or 0
+                
+
             question = Question.query.filter(Question.id == question_id).one()
-
+                        
             if question is None:
                 abort(404)
 
-        except:
-            abort(400)
+            return jsonify({
+                "success" : True,
+                "question" : question.format()
+            })
 
-        return jsonify({
-            "success" : True,
-            "question" : question.format()
-        })
+
+        except:
+            abort(404)
+
 
     """
     @TODO:

@@ -90,6 +90,128 @@ You will need to provide detailed documentation of your API endpoints including 
 }
 ```
 
+`GET '/api/v1.0/questions'`
+
+- Fetches all categories, questions and their total and paginates them
+-Request Arguments: None
+- Returns: An object with keys; `questions` whose value is a list of paginated question objects, `totalQuestions` whose value is the total number of questions and `categories` whose value is an object of `id: category_string` key: value pairs
+
+```json
+{
+    "categories": {
+        "1": "Science",
+        "2": "Art",
+        "3": "Geography",
+        "4": "History",
+        "5": "Entertainment",
+        "6": "Sports"
+    },
+    "questions": [
+        {
+            "answer": "Apollo 13",
+            "category": 5,
+            "difficulty": 4,
+            "id": 2,
+            "question": "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?"
+        }
+      ],
+      "totalQuestions" : 12
+}
+```
+
+
+`DELETE '/api/v1.0/questions/<int:question_id>'`
+
+-Deletes a specific question using its id
+-Request Arguments: question_id - integer
+-Returns: an object with key "deleted_questions" whose value is an integer "id" of the deleted question and its http status code
+
+```json
+  {
+    "deleted_question" : question_id
+  }
+```
+
+`POST '/api/v1.0/questions'`
+
+-Posts a request to add new question if supplied with one or searchs and fetches qeustions with like words
+-Request Body: 
+```json
+{ "searchTerm" : "termed to be searched" } or 
+{ "question" : 
+    "question asked", 
+    "answer" : "answer to asked quesion", "difficulty": 1, "category": 3 
+  }
+```
+-Returns: an object with a key "questions" a list of searched questions when searching and none when adding new and total number of questions
+
+```json
+{
+    "questions" : [
+      {
+        "answer": "Apollo 13",
+        "category": 5,
+        "difficulty": 4,
+        "id": 2,
+        "question": "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?"
+      }
+    ],
+
+    "totalQuestions" : 2
+}
+
+```
+
+`GET '/api/v1.0/categories/<int:id>/questions'`
+
+-Fetches questions of a specific category using its id
+-Request Arguments: id : integer
+-Returns object with key: value pairs, with: "questions" key having a list of questions, "totalQuestions" whose value is the total of these questions and "currentCategory" valued with category in question
+
+```json
+{
+  "questions" : [
+            {
+            "answer": "Apollo 13",
+            "category": 5,
+            "difficulty": 4,
+            "id": 2,
+            "question": "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?"
+        }
+  ],
+  "currentCategory" : "Entertainment",
+  "totalQuestions" : 2
+}
+
+```
+
+`POST '/api/v1.0/quizzes'`
+
+-Posts previous questions and current category to get a new question that has not been asked before
+-Request Body:
+```json
+{
+  "previous_questions" : [1, 5, 6],
+  "quiz_category" : {
+    "id" : 1,
+    "type" : Art
+  }
+}
+```
+-Returns an object with key "question" and its value is a an object of a random question that has not asked yet
+
+```json
+{
+  "question" :         {
+            "answer": "Apollo 13",
+            "category": 5,
+            "difficulty": 4,
+            "id": 2,
+            "question": "What movie earned Tom Hanks his third straight Oscar nomination, in 1996?"
+        }
+}
+```
+
 ## Testing
 
 Write at least one test for the success and at least one error behavior of each endpoint using the unittest library.
