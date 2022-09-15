@@ -107,7 +107,7 @@ def create_app(test_config=None):
             })
 
         except:
-            abort(400)
+            abort(500)
         
 
 
@@ -301,6 +301,10 @@ def create_app(test_config=None):
     @app.errorhandler(422)
     def unprocessable(error):
         return jsonify({ "success": False, "error": 422, "message": "Unprocessable request"}), 422,
+
+    @app.errorhandler(500)
+    def server_error(error):
+        return jsonify({"success" : False, "error": 500, "message" : "Internal server error"}), 500,
 
 
     return app
