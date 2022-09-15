@@ -248,7 +248,7 @@ def create_app(test_config=None):
             previous_questions = body.get('previous_questions') or []
             quiz_category = body.get('quiz_category') or None
 
-            if quiz_category["id"] != 0:
+            if quiz_category["id"]:
 
                 current_category = Category.query.filter(Category.type==quiz_category["type"]).one_or_none()
                 cat_questions = Question.query.filter(Question.category==current_category.id)
@@ -262,27 +262,29 @@ def create_app(test_config=None):
                         "success": True
                     })
 
-                question_id = choice([i for i in random_range if i not in previous_questions]) or 0
+                question_id = choice([i for i in random_range if i not in previous_questions]) 
                                 
 
             else:
+                print(quiz_category["id"])
                 cat_questions = Question.query.all()
-                upper_limit = len(cat_questions)
-
+                random_range = [ question.id for question in cat_questions ]
                 #if the questions are finished
-                if  len(previous_questions) == upper_limit:
+                if  len(previous_questions) == len(random_range):
                     return jsonify({
                         "success": True
                     })
                 #generate random number within the range of zero to the number of question
-                question_id = choice([i for i in range(0, upper_limit) if i not in previous_questions]) or 0
-                
+                question_id = choice([i for i in random_range if i not in previous_questions]) 
+                print(previous_questions)
+                print(question_id)                
 
-            question = Question.query.filter(Question.id == question_id).one()
+            question = Question.query.filter(Question.id == question_id).one_or_none()
+            print(question.format())
                         
             if question is None:
                 abort(404)
-
+                
             return jsonify({
                 "success" : True,
                 "question" : question.format()

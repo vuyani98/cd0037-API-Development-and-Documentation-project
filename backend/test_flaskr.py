@@ -87,7 +87,9 @@ class TriviaTestCase(unittest.TestCase):
         res = self.client().delete("/questions/12")
         data = json.loads(res.data)
 
-        if data["message"]:
+        question = Question.query.filter(Question.id==12).one_or_none()
+        
+        if question is None:
             self.assertEqual(res.status_code, 422)
         
         else:
